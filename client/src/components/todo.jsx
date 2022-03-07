@@ -120,7 +120,7 @@ function Todo() {
       <div className="item-div">
         {todos.map((todo) => (
           <div className="item-list" key={todo._id}>
-            <input type="checkbox" className="check" />
+            <input type="checkbox" className="check" checked={todo.done} />
             <span>{todo.title}</span>
 
             <i
