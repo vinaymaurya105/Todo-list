@@ -35,28 +35,28 @@ app.post("/todos", (req, res) => {
   console.log(newTodo);
   res.send(newTodo);
 });
-// app.post("/todos", async (req, res) => {
-//   const newTodo = new Todo(req.body);
-//   await newTodo.save();
-//   res.send(newTodo);
-// });
+app.post("/todos", async (req, res) => {
+  const newTodo = new Todo(req.body);
+  await newTodo.save();
+  res.send(newTodo);
+});
 
-// app.patch("/todos/:id", async (req, res) => {
-//   const { id } = req.params;
-//   const updatetodo = await Todo.findByIdAndUpdate(id, req.body, {
-//     runValidators: true,
-//     new: true,
-//   });
+app.patch("/todos/:id", async (req, res) => {
+  const { id } = req.params;
+  const updatetodo = await Todo.findByIdAndUpdate(id, req.body, {
+    runValidators: true,
+    new: true,
+  });
 
-//   res.send("Updated Successfully");
-// });
+  res.send("Updated Successfully");
+});
 
-// app.delete("/todos/:id", async (req, res) => {
-//   const { id } = req.params;
-//   const deleteTodo = await Todo.findByIdAndDelete(id);
+app.delete("/todos/:id", async (req, res) => {
+  const { id } = req.params;
+  const deleteTodo = await Todo.findByIdAndDelete(id);
 
-//   res.send(`${deleteTodo} Deleted Successfully`);
-// });
+  res.send(`${deleteTodo} Deleted Successfully`);
+});
 
 app.listen(PORT, () => {
   console.log(`SERVER STARTED ON ${PORT}`);
