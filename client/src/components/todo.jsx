@@ -84,7 +84,6 @@ function Todo() {
 
   const editTodo = (_id) => {
     const updateTodo = todos.find((todo) => todo._id === _id);
-
     setToggleBtn(false);
     setText(updateTodo.title);
     setEditItem(_id);
@@ -128,6 +127,7 @@ function Todo() {
               aria-hidden="true"
               onClick={() => deleteTodo(todo._id)}
             ></i>
+
             <i
               className="fa fa-lg fa-pencil-square-o editBtn"
               aria-hidden="true"
