@@ -1,6 +1,7 @@
 const express = require("express");
 const app = express();
 const mongoose = require("mongoose");
+
 mongoose
   .connect("mongodb://localhost:27017/todoList")
   .then((res) => {
@@ -10,7 +11,7 @@ mongoose
     console.log("Mongoose connection Error");
   });
 
-const Todo = require("./src/todo.js");
+const Todo = require("./todo.js");
 
 const PORT = 8080;
 
@@ -26,15 +27,11 @@ app.use(
 );
 
 app.get("/todos", async (req, res) => {
-  const todoList = await Todo.find({});
+  const todoList = await Todo.find({}).sort({ date: -1 });
+  console.log(todoList);
   res.send(todoList);
 });
 
-app.post("/todos", (req, res) => {
-  const newTodo = new Todo(req.body);
-  console.log(newTodo);
-  res.send(newTodo);
-});
 app.post("/todos", async (req, res) => {
   const newTodo = new Todo(req.body);
   await newTodo.save();
@@ -53,9 +50,9 @@ app.patch("/todos/:id", async (req, res) => {
 
 app.delete("/todos/:id", async (req, res) => {
   const { id } = req.params;
-  const deleteTodo = await Todo.findByIdAndDelete(id);
+  const { title } = await Todo.findByIdAndDelete(id);
 
-  res.send(`${deleteTodo} Deleted Successfully`);
+  res.send(`${title} Deleted Successfully.`);
 });
 
 app.listen(PORT, () => {

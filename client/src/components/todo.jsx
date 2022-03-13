@@ -1,12 +1,112 @@
 import React, { useState, useEffect } from "react";
+import ClearIcon from "@material-ui/icons/Clear";
 import "../css/todo.css";
 import axios from "axios";
 
+import { makeStyles } from "@material-ui/core/styles";
+
+const useStyles = makeStyles({
+  cancelBtn: {
+    fontSize: 17,
+    padding: "0 4px 0 4px",
+    marginBottom: -2,
+    cursor: "pointer",
+    marginRight: 5,
+  },
+});
+
+const URL = "http://localhost:8080/todos";
+
 function Todo() {
-  const [text, setText] = useState("");
+  const classes = useStyles();
+
+  const [currentTodo, setCurrentTodo] = useState({ title: "" });
   const [todos, setTodos] = useState([]);
-  const [toggleBtn, setToggleBtn] = useState(true);
-  const [editItem, setEditItem] = useState(null);
+
+  // true - Editing old item or false - adding new
+  const [isEditing, setIsEditing] = useState(false);
+  // const [isCancel, setIsCancel] = useState(false);
+
+  const handleChange = (event) => {
+    const value = event.target.value;
+    // setText();
+    setCurrentTodo((prevState) => ({
+      ...prevState,
+      title: value,
+    }));
+  };
+
+  const handleSave = (e) => {
+    const { code } = e;
+
+    if (code !== "Enter") return;
+
+    const { title } = currentTodo;
+
+    if (title === "") {
+      alert("Write something first");
+      return;
+    }
+
+    axios
+      .post(URL, { title })
+      .then((response) => {
+        const { _id, title } = response.data;
+        setTodos((prevState) => [{ _id, title }, ...prevState]);
+        setCurrentTodo({ title: "" });
+      })
+      .catch((err) => console.log(err));
+  };
+
+  const handleDelete = (id) => {
+    const deleteURL = `${URL}/${id}`;
+    axios
+      .delete(deleteURL)
+      .then((response) => {
+        const updateTodo = todos.filter((todo) => todo._id !== id);
+        setTodos(updateTodo);
+      })
+      .catch((err) => console.log(err));
+  };
+
+  const handleEditSave = (e) => {
+    // Saving edited
+    const { code } = e;
+
+    if (code !== "Enter") return;
+    const { _id, title } = currentTodo;
+
+    const updateUrl = `${URL}/${_id}`;
+    axios
+      .patch(updateUrl, { title })
+      .then(() => {
+        setTodos((prevState) =>
+          prevState.map((todo) => (todo._id === _id ? { _id, title } : todo))
+        );
+        setCurrentTodo({ title: "" });
+        setIsEditing(false);
+      })
+      .catch((err) => console.log(err));
+  };
+
+  const handleEdit = (_id) => {
+    const updateTodo = todos.find((todo) => todo._id === _id);
+    setCurrentTodo(updateTodo);
+    setIsEditing(true);
+  };
+
+  const handleStatusUpdate = (id) => {
+    const updatedTodos = todos.map((todo) =>
+      todo._id === id ? { ...todo, done: true } : todo
+    );
+    setTodos(updatedTodos);
+  };
+
+  // Erase  all  text in input on click
+  const handleCancel = () => {
+    setCurrentTodo({ title: "" });
+    setIsEditing(false);
+  };
 
   useEffect(() => {
     axios
@@ -19,76 +119,6 @@ function Todo() {
       });
   }, []);
 
-  const handleChange = (event) => {
-    const value = event.target.value;
-    setText(value);
-  };
-
-  const addTodo = () => {
-    if (text === "") {
-      alert("Write something first");
-    } else if (text && !toggleBtn) {
-      setTodos(
-        todos.map((elem) => {
-          if (elem._id === editItem) {
-            return { ...elem, title: text };
-          }
-          return elem;
-        })
-      );
-      setToggleBtn(true);
-      setText("");
-      setEditItem(null);
-    } else {
-      const newTodo = {
-        _id: Date.now(),
-        title: text,
-      };
-
-      setTodos(() => [newTodo, ...todos]);
-      setText("");
-    }
-  };
-  const handleSave = (e) => {
-    const { code } = e;
-    if (code === "Enter") {
-      const newTodo = {
-        _id: Date.now(),
-        title: text,
-      };
-      if (text === "") {
-        alert("Write something first");
-      } else if (text && !toggleBtn) {
-        setTodos(
-          todos.map((elem) => {
-            if (elem._id === editItem) {
-              return { ...elem, title: text };
-            }
-            return elem;
-          })
-        );
-        setToggleBtn(true);
-        setText("");
-        setEditItem(null);
-      } else {
-        setTodos((prevState) => [newTodo, ...prevState]);
-        setText("");
-      }
-    }
-  };
-
-  const deleteTodo = (_id) => {
-    const updateTodo = todos.filter((todos) => todos._id !== _id);
-    setTodos(updateTodo);
-  };
-
-  const editTodo = (_id) => {
-    const updateTodo = todos.find((todo) => todo._id === _id);
-    setToggleBtn(false);
-    setText(updateTodo.title);
-    setEditItem(_id);
-  };
-
   return (
     <div>
       <h1 className="header">Todo List by using MERN</h1>
@@ -98,43 +128,62 @@ function Todo() {
           className="input-data"
           type="text"
           placeholder="write todo here"
-          value={text}
+          value={currentTodo.title}
+          autoComplete="on"
           onChange={handleChange}
-          onKeyDownCapture={handleSave}
+          onKeyDownCapture={!isEditing ? handleSave : handleEditSave}
         />
-        {toggleBtn ? (
-          <i
-            className="fa fa-lg fa-plus addBtn"
-            aria-hidden="true"
-            onClick={addTodo}
-          ></i>
-        ) : (
-          <i
-            className="fa  fa-lg fa-pencil-square-o addBtn "
-            aria-hidden="true"
-            onClick={addTodo}
-          ></i>
-        )}
+
+        <span>
+          {currentTodo.title === "" ? null : (
+            <ClearIcon className={classes.cancelBtn} onClick={handleCancel} />
+          )}
+        </span>
+        <span>
+          {isEditing ? (
+            <i
+              className="fa  fa-pencil-square-o addBtn"
+              aria-hidden="true"
+              onClick={handleEditSave}
+            ></i>
+          ) : (
+            <i
+              className="fa   fa-plus addBtn "
+              aria-hidden="true"
+              onClick={() => handleSave({ code: "Enter" })}
+            ></i>
+          )}
+        </span>
       </div>
       <div className="item-div">
-        {todos.map((todo) => (
-          <div className="item-list" key={todo._id}>
-            <input type="checkbox" className="check" checked={todo.done} />
-            <span>{todo.title}</span>
+        {todos.map((todo) => {
+          const { _id, title, done = false } = todo;
+          return (
+            <div className="item-list" key={todo._id}>
+              <input
+                type="checkbox"
+                className="check"
+                checked={done}
+                onChange={() => handleStatusUpdate(_id)}
+              />
+              <span style={{ textDecoration: done ? "line-through" : "" }}>
+                {title}
+              </span>
 
-            <i
-              className="fa fa-lg fa-trash delBtn"
-              aria-hidden="true"
-              onClick={() => deleteTodo(todo._id)}
-            ></i>
+              <i
+                className="fa fa-lg fa-trash delBtn"
+                aria-hidden="true"
+                onClick={() => handleDelete(_id)}
+              ></i>
 
-            <i
-              className="fa fa-lg fa-pencil-square-o editBtn"
-              aria-hidden="true"
-              onClick={() => editTodo(todo._id)}
-            ></i>
-          </div>
-        ))}
+              <i
+                className="fa fa-lg fa-pencil-square-o editBtn"
+                aria-hidden="true"
+                onClick={() => handleEdit(_id)}
+              ></i>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
